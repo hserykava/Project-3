@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CoP Trajectory Viewer</title>
+  <title>Balance Sway Human Model</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    svg { border: 1px solid #ccc; }
+    svg { border: 1px solid #ccc; background-color: #f9f9f9; }
+    .controls { margin-bottom: 10px; }
     .tooltip {
       position: absolute;
       background-color: white;
@@ -19,30 +20,45 @@
   </style>
 </head>
 <body>
-  <h1>Center of Pressure (CoP) Trajectory Viewer</h1>
-  <label for="sampleSelect">Select Sample:</label>
-  <select id="sampleSelect"></select>
-  <label><input type="checkbox" id="showWON" checked> Show WON</label>
-  <label><input type="checkbox" id="showWR" checked> Show WR</label>
-  <button id="playBtn">▶️ Play</button>
-  <button id="pauseBtn">⏸️ Pause</button>
-  <svg width="800" height="500"></svg>
-  <div class="tooltip" style="display: none;"></div>
+  <h1>Human Balance Animation: CoP Sway</h1>
+  <div class="controls">
+    <label for="sampleSelect">Select Sample:</label>
+    <select id="sampleSelect"></select>
+    <label><input type="radio" name="condition" value="WON" checked> WON</label>
+    <label><input type="radio" name="condition" value="WR"> WR</label>
+    <button id="playBtn">▶️ Play</button>
+    <button id="pauseBtn">⏸️ Pause</button>
+  </div>
+  <svg width="600" height="500"></svg>
 
   <script>
     const svg = d3.select("svg");
-    const tooltip = d3.select(".tooltip");
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-    const width = +svg.attr("width") - margin.left - margin.right;
-    const height = +svg.attr("height") - margin.top - margin.bottom;
-    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const x = d3.scaleLinear().range([0, width]);
-    const y = d3.scaleLinear().range([height, 0]);
-
-    const color = d3.scaleOrdinal().domain(["WON", "WR"]).range(["steelblue", "darkorange"]);
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+    const centerX = width / 2;
+    const centerY = height / 2 + 50;
+    const swayScale = 500; // exaggerate movement for visibility
 
     let data = [], animationTimer, currentIndex = 0;
+
+    // Draw base line (legs)
+    svg.append("line")
+      .attr("x1", centerX)
+      .attr("y1", centerY + 50)
+      .attr("x2", centerX)
+      .attr("y2", centerY)
+      .attr("stroke", "gray")
+      .attr("stroke-width", 6);
+
+    // Create animated torso line
+    const person = svg.append("line")
+      .attr("id", "person")
+      .attr("x1", centerX)
+      .attr("y1", centerY)
+      .attr("x2", centerX)
+      .attr("y2", centerY - 100)
+      .attr("stroke", "black")
+      .attr("stroke-width", 6);
 
     d3.json("data/sway_data.json").then(json => {
       data = json;
@@ -55,83 +71,35 @@
         .append("option")
         .text(d => d);
 
-      drawChart();
-      d3.select("#sampleSelect").on("change", drawChart);
-      d3.select("#showWON").on("change", drawChart);
-      d3.select("#showWR").on("change", drawChart);
       d3.select("#playBtn").on("click", () => {
-        const selectedSample = d3.select("#sampleSelect").property("value");
-        const selectedData = data.filter(d => d.Sample === selectedSample);
-        animatePath(selectedData);
+        const sample = d3.select("#sampleSelect").property("value");
+        const condition = document.querySelector('input[name="condition"]:checked').value;
+        const filtered = data.filter(d => d.Sample === sample && d.Description === condition);
+        animateHuman(filtered);
       });
+
       d3.select("#pauseBtn").on("click", () => clearInterval(animationTimer));
     });
 
-    const line = d3.line()
-      .x(d => x(d.CoPx))
-      .y(d => y(d.CoPy));
-
-    function drawChart() {
-      g.selectAll(".line-path, .axis, .dot, .brush").remove();
-
-      const selectedSample = d3.select("#sampleSelect").property("value");
-      const showWON = d3.select("#showWON").property("checked");
-      const showWR = d3.select("#showWR").property("checked");
-
-      const filtered = data.filter(d => d.Sample === selectedSample &&
-        ((d.Description === "WON" && showWON) || (d.Description === "WR" && showWR)));
-
-      const grouped = d3.groups(filtered, d => d.Description);
-
-      x.domain(d3.extent(filtered, d => d.CoPx));
-      y.domain(d3.extent(filtered, d => d.CoPy));
-
-      g.append("g").attr("class", "axis").call(d3.axisLeft(y));
-      g.append("g").attr("class", "axis").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
-
-      grouped.forEach(([desc, values]) => {
-        g.append("path")
-          .datum(values)
-          .attr("fill", "none")
-          .attr("stroke", color(desc))
-          .attr("stroke-width", 2)
-          .attr("class", "line-path")
-          .attr("d", line);
-      });
-
-      const brush = d3.brush()
-        .extent([[0, 0], [width, height]])
-        .on("end", event => {
-          const s = event.selection;
-          if (!s) return;
-          const [[x0, y0], [x1, y1]] = s;
-          x.domain([x.invert(x0), x.invert(x1)]);
-          y.domain([y.invert(y1), y.invert(y0)]);
-          drawChart();
-        });
-
-      g.append("g")
-        .attr("class", "brush")
-        .call(brush);
-    }
-
-    function animatePath(data) {
+    function animateHuman(swayData) {
       clearInterval(animationTimer);
       currentIndex = 0;
 
-      const dot = g.append("circle")
-        .attr("r", 5)
-        .attr("fill", "black");
-
       animationTimer = setInterval(() => {
-        if (currentIndex >= data.length) {
+        if (currentIndex >= swayData.length) {
           clearInterval(animationTimer);
           return;
         }
-        const d = data[currentIndex];
-        dot.attr("cx", x(d.CoPx)).attr("cy", y(d.CoPy));
+        const d = swayData[currentIndex];
+        const offsetX = d.CoPx * swayScale;
+        const offsetY = -d.CoPy * swayScale;
+
+        d3.select("#person")
+          .attr("x2", centerX + offsetX)
+          .attr("y2", centerY - 100 + offsetY);
+
         currentIndex++;
-      }, 20);
+      }, 15);
     }
   </script>
 </body>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VR Music and Body Sway Visualization</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoP Trajectory Viewer</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -19,11 +19,13 @@
   </style>
 </head>
 <body>
-  <h1>Interactive Body Sway Visualization</h1>
+  <h1>Center of Pressure (CoP) Trajectory Viewer</h1>
   <label for="sampleSelect">Select Sample:</label>
   <select id="sampleSelect"></select>
   <label><input type="checkbox" id="showWON" checked> Show WON</label>
   <label><input type="checkbox" id="showWR" checked> Show WR</label>
+  <button id="playBtn">▶️ Play</button>
+  <button id="pauseBtn">⏸️ Pause</button>
   <svg width="800" height="500"></svg>
   <div class="tooltip" style="display: none;"></div>
 
@@ -33,21 +35,15 @@
     const margin = { top: 20, right: 30, bottom: 40, left: 50 };
     const width = +svg.attr("width") - margin.left - margin.right;
     const height = +svg.attr("height") - margin.top - margin.bottom;
-
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleLinear().range([0, width]);
     const y = d3.scaleLinear().range([height, 0]);
 
-    const line = d3.line()
-      .x(d => x(d.CoPx))
-      .y(d => y(d.CoPy));
-
     const color = d3.scaleOrdinal().domain(["WON", "WR"]).range(["steelblue", "darkorange"]);
 
-    let data; // Will be loaded below
+    let data = [], animationTimer, currentIndex = 0;
 
-    // Dummy data structure (you'll replace this with your real JSON-converted dataset)
     d3.json("data/sway_data.json").then(json => {
       data = json;
       const samples = Array.from(new Set(data.map(d => d.Sample)));
@@ -64,52 +60,79 @@
       d3.select("#sampleSelect").on("change", drawChart);
       d3.select("#showWON").on("change", drawChart);
       d3.select("#showWR").on("change", drawChart);
+      d3.select("#playBtn").on("click", () => {
+        const selectedSample = d3.select("#sampleSelect").property("value");
+        const selectedData = data.filter(d => d.Sample === selectedSample);
+        animatePath(selectedData);
+      });
+      d3.select("#pauseBtn").on("click", () => clearInterval(animationTimer));
     });
 
+    const line = d3.line()
+      .x(d => x(d.CoPx))
+      .y(d => y(d.CoPy));
+
     function drawChart() {
+      g.selectAll(".line-path, .axis, .dot, .brush").remove();
+
       const selectedSample = d3.select("#sampleSelect").property("value");
       const showWON = d3.select("#showWON").property("checked");
       const showWR = d3.select("#showWR").property("checked");
 
-      const filtered = data.filter(d => d.Sample === selectedSample && ((d.Description === "WON" && showWON) || (d.Description === "WR" && showWR)));
+      const filtered = data.filter(d => d.Sample === selectedSample &&
+        ((d.Description === "WON" && showWON) || (d.Description === "WR" && showWR)));
 
       const grouped = d3.groups(filtered, d => d.Description);
 
       x.domain(d3.extent(filtered, d => d.CoPx));
       y.domain(d3.extent(filtered, d => d.CoPy));
 
-      g.selectAll(".axis").remove();
       g.append("g").attr("class", "axis").call(d3.axisLeft(y));
       g.append("g").attr("class", "axis").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
 
-      g.selectAll(".line-path").remove();
       grouped.forEach(([desc, values]) => {
         g.append("path")
           .datum(values)
           .attr("fill", "none")
           .attr("stroke", color(desc))
-          .attr("stroke-width", 1.5)
+          .attr("stroke-width", 2)
           .attr("class", "line-path")
           .attr("d", line);
       });
 
-      g.selectAll(".dot").remove();
-      g.selectAll(".dot")
-        .data(filtered)
-        .enter()
-        .append("circle")
-        .attr("class", "dot")
-        .attr("cx", d => x(d.CoPx))
-        .attr("cy", d => y(d.CoPy))
-        .attr("r", 3)
-        .attr("fill", d => color(d.Description))
-        .on("mouseover", (event, d) => {
-          tooltip.style("display", "block")
-            .html(`Time: ${d.Time.toFixed(2)}s<br>CoPx: ${d.CoPx.toFixed(3)}<br>CoPy: ${d.CoPy.toFixed(3)}`)
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY}px`);
-        })
-        .on("mouseout", () => tooltip.style("display", "none"));
+      const brush = d3.brush()
+        .extent([[0, 0], [width, height]])
+        .on("end", event => {
+          const s = event.selection;
+          if (!s) return;
+          const [[x0, y0], [x1, y1]] = s;
+          x.domain([x.invert(x0), x.invert(x1)]);
+          y.domain([y.invert(y1), y.invert(y0)]);
+          drawChart();
+        });
+
+      g.append("g")
+        .attr("class", "brush")
+        .call(brush);
+    }
+
+    function animatePath(data) {
+      clearInterval(animationTimer);
+      currentIndex = 0;
+
+      const dot = g.append("circle")
+        .attr("r", 5)
+        .attr("fill", "black");
+
+      animationTimer = setInterval(() => {
+        if (currentIndex >= data.length) {
+          clearInterval(animationTimer);
+          return;
+        }
+        const d = data[currentIndex];
+        dot.attr("cx", x(d.CoPx)).attr("cy", y(d.CoPy));
+        currentIndex++;
+      }, 20);
     }
   </script>
 </body>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VR Music and Body Sway Visualization</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    svg { border: 1px solid #ccc; }
+    .tooltip {
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 5px;
+      pointer-events: none;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Body Sway Visualization</h1>
+  <label for="sampleSelect">Select Sample:</label>
+  <select id="sampleSelect"></select>
+  <label><input type="checkbox" id="showWON" checked> Show WON</label>
+  <label><input type="checkbox" id="showWR" checked> Show WR</label>
+  <svg width="800" height="500"></svg>
+  <div class="tooltip" style="display: none;"></div>
+
+  <script>
+    const svg = d3.select("svg");
+    const tooltip = d3.select(".tooltip");
+    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const width = +svg.attr("width") - margin.left - margin.right;
+    const height = +svg.attr("height") - margin.top - margin.bottom;
+
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().range([0, width]);
+    const y = d3.scaleLinear().range([height, 0]);
+
+    const line = d3.line()
+      .x(d => x(d.CoPx))
+      .y(d => y(d.CoPy));
+
+    const color = d3.scaleOrdinal().domain(["WON", "WR"]).range(["steelblue", "darkorange"]);
+
+    let data; // Will be loaded below
+
+    // Dummy data structure (you'll replace this with your real JSON-converted dataset)
+    d3.json("data/sway_data.json").then(json => {
+      data = json;
+      const samples = Array.from(new Set(data.map(d => d.Sample)));
+
+      d3.select("#sampleSelect")
+        .selectAll("option")
+        .data(samples)
+        .enter()
+        .append("option")
+        .text(d => d);
+
+      drawChart();
+
+      d3.select("#sampleSelect").on("change", drawChart);
+      d3.select("#showWON").on("change", drawChart);
+      d3.select("#showWR").on("change", drawChart);
+    });
+
+    function drawChart() {
+      const selectedSample = d3.select("#sampleSelect").property("value");
+      const showWON = d3.select("#showWON").property("checked");
+      const showWR = d3.select("#showWR").property("checked");
+
+      const filtered = data.filter(d => d.Sample === selectedSample && ((d.Description === "WON" && showWON) || (d.Description === "WR" && showWR)));
+
+      const grouped = d3.groups(filtered, d => d.Description);
+
+      x.domain(d3.extent(filtered, d => d.CoPx));
+      y.domain(d3.extent(filtered, d => d.CoPy));
+
+      g.selectAll(".axis").remove();
+      g.append("g").attr("class", "axis").call(d3.axisLeft(y));
+      g.append("g").attr("class", "axis").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+      g.selectAll(".line-path").remove();
+      grouped.forEach(([desc, values]) => {
+        g.append("path")
+          .datum(values)
+          .attr("fill", "none")
+          .attr("stroke", color(desc))
+          .attr("stroke-width", 1.5)
+          .attr("class", "line-path")
+          .attr("d", line);
+      });
+
+      g.selectAll(".dot").remove();
+      g.selectAll(".dot")
+        .data(filtered)
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.CoPx))
+        .attr("cy", d => y(d.CoPy))
+        .attr("r", 3)
+        .attr("fill", d => color(d.Description))
+        .on("mouseover", (event, d) => {
+          tooltip.style("display", "block")
+            .html(`Time: ${d.Time.toFixed(2)}s<br>CoPx: ${d.CoPx.toFixed(3)}<br>CoPy: ${d.CoPy.toFixed(3)}`)
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY}px`);
+        })
+        .on("mouseout", () => tooltip.style("display", "none"));
+    }
+  </script>
+</body>
+</html>

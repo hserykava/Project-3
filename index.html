@@ -21,25 +21,26 @@
     <button id="playBtn">▶️ Play</button>
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
-  <svg width="600" height="500"></svg>
+  <svg width="800" height="600"></svg>
 
   <script>
     const svg = d3.select("svg");
     const width = +svg.attr("width");
     const height = +svg.attr("height");
     const centerX = width / 2;
-    const baseY = height / 2 + 100;
-    const swayScale = 400;
-
+    const baseY = height / 2 + 150;
+    const swayScaleX = 1000;  
+    const swayScaleY = 1000;  
+    
     let data = [], animationTimer, currentIndex = 0, swayData = [], isPlaying = false;
 
     // Body parts
-    const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const head = svg.append("circle").attr("r", 10).attr("fill", "black");
-    const leftArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 4);
-    const rightArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 4);
-    const leftLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 6);
-    const rightLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 6);
+    const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head = svg.append("circle").attr("r", 20).attr("fill", "black");
+    const leftArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+    const rightLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
 
     d3.json("data/sway_data.json").then(json => {
       data = json;
@@ -86,25 +87,25 @@
 
     function drawInitialFigure() {
       const torsoTopX = centerX;
-      const torsoTopY = baseY - 100;
+      const torsoTopY = baseY - 200;
       const torsoBottomX = centerX;
       const torsoBottomY = baseY;
 
       body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
           .attr("x2", torsoTopX).attr("y2", torsoTopY);
 
-      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
+      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
 
       leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-             .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
+             .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
 
       rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-              .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
+              .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
 
-      leftLeg.attr("x1", centerX - 10).attr("y1", baseY + 40)
+      leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
              .attr("x2", centerX).attr("y2", baseY);
 
-      rightLeg.attr("x1", centerX + 10).attr("y1", baseY + 40)
+      rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
               .attr("x2", centerX).attr("y2", baseY);
     }
 
@@ -118,29 +119,29 @@
         }
 
         const d = swayData[currentIndex];
-        const offsetX = d.CoPx * swayScale;
-        const offsetY = -d.CoPy * swayScale;
+        const offsetX = d.CoPx * swayScaleX;
+        const offsetY = -d.CoPy * swayScaleY;
 
         const torsoTopX = centerX + offsetX;
-        const torsoTopY = baseY - 100 + offsetY;
+        const torsoTopY = baseY - 200 + offsetY;
         const torsoBottomX = centerX;
         const torsoBottomY = baseY;
 
         body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
             .attr("x2", torsoTopX).attr("y2", torsoTopY);
 
-        head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
+        head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
 
         leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-               .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
+               .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
 
         rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-                .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
+                .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
 
-        leftLeg.attr("x1", centerX - 10).attr("y1", baseY + 40)
+        leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
                .attr("x2", centerX).attr("y2", baseY);
 
-        rightLeg.attr("x1", centerX + 10).attr("y1", baseY + 40)
+        rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
                 .attr("x2", centerX).attr("y2", baseY);
 
         currentIndex++;

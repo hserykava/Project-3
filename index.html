@@ -31,25 +31,15 @@
     const baseY = height / 2 + 100;
     const swayScale = 400;
 
-    let data = [], animationTimer, currentIndex = 0;
+    let data = [], animationTimer, currentIndex = 0, swayData = [];
 
     // Body parts
-    const body = svg.append("line")
-      .attr("stroke", "black").attr("stroke-width", 6);
-
-    const head = svg.append("circle")
-      .attr("r", 10).attr("fill", "black");
-
-    const leftArm = svg.append("line")
-      .attr("stroke", "black").attr("stroke-width", 4);
-
-    const rightArm = svg.append("line")
-      .attr("stroke", "black").attr("stroke-width", 4);
-
-    const legs = svg.append("line")
-      .attr("x1", centerX).attr("y1", baseY)
-      .attr("x2", centerX).attr("y2", baseY + 40)
-      .attr("stroke", "gray").attr("stroke-width", 6);
+    const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const head = svg.append("circle").attr("r", 10).attr("fill", "black");
+    const leftArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 4);
+    const rightArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 4);
+    const leftLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 6);
+    const rightLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 6);
 
     d3.json("data/sway_data.json").then(json => {
       data = json;
@@ -62,20 +52,29 @@
         .append("option")
         .text(d => d);
 
+      d3.selectAll("input[name='condition']").on("change", updateSwayData);
+      d3.select("#sampleSelect").on("change", updateSwayData);
+
       d3.select("#playBtn").on("click", () => {
-        const sample = d3.select("#sampleSelect").property("value");
-        const condition = document.querySelector('input[name="condition"]:checked').value;
-        const filtered = data.filter(d => d.Sample === sample && d.Description === condition);
-        animateHuman(filtered);
+        clearInterval(animationTimer);
+        currentIndex = 0;
+        animateHuman();
       });
 
       d3.select("#pauseBtn").on("click", () => clearInterval(animationTimer));
+
+      updateSwayData();
     });
 
-    function animateHuman(swayData) {
+    function updateSwayData() {
+      const sample = d3.select("#sampleSelect").property("value");
+      const condition = document.querySelector('input[name="condition"]:checked').value;
+      swayData = data.filter(d => d.Sample === sample && d.Description === condition);
       clearInterval(animationTimer);
       currentIndex = 0;
+    }
 
+    function animateHuman() {
       animationTimer = setInterval(() => {
         if (currentIndex >= swayData.length) {
           clearInterval(animationTimer);
@@ -91,16 +90,24 @@
         const torsoBottomX = centerX;
         const torsoBottomY = baseY;
 
+        // Body
         body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
             .attr("x2", torsoTopX).attr("y2", torsoTopY);
 
+        // Head
         head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
 
+        // Arms
         leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
                .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
-
         rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
                 .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
+
+        // Legs (fixed)
+        leftLeg.attr("x1", centerX - 10).attr("y1", baseY + 40)
+               .attr("x2", centerX).attr("y2", baseY);
+        rightLeg.attr("x1", centerX + 10).attr("y1", baseY + 40)
+                .attr("x2", centerX).attr("y2", baseY);
 
         currentIndex++;
       }, 15);

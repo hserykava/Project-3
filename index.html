@@ -3,20 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Balance Sway Human Model</title>
+  <title>Human Balance Animation</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     svg { border: 1px solid #ccc; background-color: #f9f9f9; }
     .controls { margin-bottom: 10px; }
-    .tooltip {
-      position: absolute;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 5px;
-      pointer-events: none;
-      font-size: 12px;
-    }
   </style>
 </head>
 <body>
@@ -36,29 +28,28 @@
     const width = +svg.attr("width");
     const height = +svg.attr("height");
     const centerX = width / 2;
-    const centerY = height / 2 + 50;
-    const swayScale = 500; // exaggerate movement for visibility
+    const baseY = height / 2 + 100;
+    const swayScale = 400;
 
     let data = [], animationTimer, currentIndex = 0;
 
-    // Draw base line (legs)
-    svg.append("line")
-      .attr("x1", centerX)
-      .attr("y1", centerY + 50)
-      .attr("x2", centerX)
-      .attr("y2", centerY)
-      .attr("stroke", "gray")
-      .attr("stroke-width", 6);
+    // Body parts
+    const body = svg.append("line")
+      .attr("stroke", "black").attr("stroke-width", 6);
 
-    // Create animated torso line
-    const person = svg.append("line")
-      .attr("id", "person")
-      .attr("x1", centerX)
-      .attr("y1", centerY)
-      .attr("x2", centerX)
-      .attr("y2", centerY - 100)
-      .attr("stroke", "black")
-      .attr("stroke-width", 6);
+    const head = svg.append("circle")
+      .attr("r", 10).attr("fill", "black");
+
+    const leftArm = svg.append("line")
+      .attr("stroke", "black").attr("stroke-width", 4);
+
+    const rightArm = svg.append("line")
+      .attr("stroke", "black").attr("stroke-width", 4);
+
+    const legs = svg.append("line")
+      .attr("x1", centerX).attr("y1", baseY)
+      .attr("x2", centerX).attr("y2", baseY + 40)
+      .attr("stroke", "gray").attr("stroke-width", 6);
 
     d3.json("data/sway_data.json").then(json => {
       data = json;
@@ -90,13 +81,26 @@
           clearInterval(animationTimer);
           return;
         }
+
         const d = swayData[currentIndex];
         const offsetX = d.CoPx * swayScale;
         const offsetY = -d.CoPy * swayScale;
 
-        d3.select("#person")
-          .attr("x2", centerX + offsetX)
-          .attr("y2", centerY - 100 + offsetY);
+        const torsoTopX = centerX + offsetX;
+        const torsoTopY = baseY - 100 + offsetY;
+        const torsoBottomX = centerX;
+        const torsoBottomY = baseY;
+
+        body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
+            .attr("x2", torsoTopX).attr("y2", torsoTopY);
+
+        head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
+
+        leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+               .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
+
+        rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+                .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
 
         currentIndex++;
       }, 15);

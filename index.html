@@ -31,7 +31,7 @@
     const baseY = height / 2 + 100;
     const swayScale = 400;
 
-    let data = [], animationTimer, currentIndex = 0, swayData = [];
+    let data = [], animationTimer, currentIndex = 0, swayData = [], isPlaying = false;
 
     // Body parts
     const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
@@ -52,32 +52,68 @@
         .append("option")
         .text(d => d);
 
-      d3.selectAll("input[name='condition']").on("change", updateSwayData);
-      d3.select("#sampleSelect").on("change", updateSwayData);
+      d3.selectAll("input[name='condition']").on("change", () => {
+        updateSwayData();
+        if (isPlaying) animateHuman();
+      });
+
+      d3.select("#sampleSelect").on("change", () => {
+        updateSwayData();
+        if (isPlaying) animateHuman();
+      });
 
       d3.select("#playBtn").on("click", () => {
-        clearInterval(animationTimer);
+        isPlaying = true;
         currentIndex = 0;
         animateHuman();
       });
 
-      d3.select("#pauseBtn").on("click", () => clearInterval(animationTimer));
+      d3.select("#pauseBtn").on("click", () => {
+        clearInterval(animationTimer);
+        isPlaying = false;
+      });
 
       updateSwayData();
+      drawInitialFigure();
     });
 
     function updateSwayData() {
       const sample = d3.select("#sampleSelect").property("value");
       const condition = document.querySelector('input[name="condition"]:checked').value;
       swayData = data.filter(d => d.Sample === sample && d.Description === condition);
-      clearInterval(animationTimer);
       currentIndex = 0;
     }
 
+    function drawInitialFigure() {
+      const torsoTopX = centerX;
+      const torsoTopY = baseY - 100;
+      const torsoBottomX = centerX;
+      const torsoBottomY = baseY;
+
+      body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
+          .attr("x2", torsoTopX).attr("y2", torsoTopY);
+
+      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
+
+      leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+             .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
+
+      rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+              .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
+
+      leftLeg.attr("x1", centerX - 10).attr("y1", baseY + 40)
+             .attr("x2", centerX).attr("y2", baseY);
+
+      rightLeg.attr("x1", centerX + 10).attr("y1", baseY + 40)
+              .attr("x2", centerX).attr("y2", baseY);
+    }
+
     function animateHuman() {
+      clearInterval(animationTimer);
       animationTimer = setInterval(() => {
         if (currentIndex >= swayData.length) {
           clearInterval(animationTimer);
+          isPlaying = false;
           return;
         }
 
@@ -90,22 +126,20 @@
         const torsoBottomX = centerX;
         const torsoBottomY = baseY;
 
-        // Body
         body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
             .attr("x2", torsoTopX).attr("y2", torsoTopY);
 
-        // Head
         head.attr("cx", torsoTopX).attr("cy", torsoTopY - 15);
 
-        // Arms
         leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
                .attr("x2", torsoTopX - 20).attr("y2", torsoTopY + 20);
+
         rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
                 .attr("x2", torsoTopX + 20).attr("y2", torsoTopY + 20);
 
-        // Legs (fixed)
         leftLeg.attr("x1", centerX - 10).attr("y1", baseY + 40)
                .attr("x2", centerX).attr("y2", baseY);
+
         rightLeg.attr("x1", centerX + 10).attr("y1", baseY + 40)
                 .attr("x2", centerX).attr("y2", baseY);
 

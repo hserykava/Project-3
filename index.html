@@ -16,6 +16,7 @@
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
   <svg width="1000" height="600"></svg>
+  <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
 
   <script>
     const svg = d3.select("svg");
@@ -159,6 +160,39 @@
         currentIndex++;
       }, 70);
     }
+      
+    const tooltip = d3.select("#tooltip");
+
+    function calculateAverageSway(data) {
+      if (data.length === 0) return 0;
+      let sum = 0;
+      data.forEach(d => {
+        sum += Math.sqrt(d.CoPx * d.CoPx + d.CoPy * d.CoPy);
+      });
+      return (sum / data.length * 1000).toFixed(2);
+    }
+
+    head1.on("mouseover", () => {
+      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      tooltip.transition().duration(200).style("opacity", 1);
+      tooltip.html(`<strong>Condition:</strong> ${selectedPair[0]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData1)} mm`)
+             .style("left", (centerX1 - 40) + "px")
+             .style("top", (baseY - 250) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(200).style("opacity", 0);
+    });
+
+    head2.on("mouseover", () => {
+      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      tooltip.transition().duration(200).style("opacity", 1);
+      tooltip.html(`<strong>Condition:</strong> ${selectedPair[1]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData2)} mm`)
+             .style("left", (centerX2 - 40) + "px")
+             .style("top", (baseY - 250) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(200).style("opacity", 0);
+    });
   </script>
 </body>
 </html>

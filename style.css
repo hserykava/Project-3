@@ -121,5 +121,5 @@ svg, .controls, h1, h2 {
   pointer-events: none;
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
   color: #222;
-  transform: translateY(-30px); /* pull tooltip 30px higher */
+  transform: translateY(-50px);
 }

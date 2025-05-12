@@ -52,7 +52,10 @@
 
       d3.select("#categorySelect").on("change", () => {
         updateSwayData();
-        if (isPlaying) animateHuman();
+        if (isPlaying) {
+          currentIndex = 0;
+          animateHuman();
+        }
       });
 
       d3.select("#playBtn").on("click", () => {
@@ -73,6 +76,7 @@
     function updateSwayData() {
       const category = d3.select("#categorySelect").property("value");
       swayData = data.filter(d => d.Description === category);
+      clearInterval(animationTimer);
       currentIndex = 0;
     }
 
@@ -136,7 +140,7 @@
                 .attr("x2", centerX).attr("y2", baseY);
 
         currentIndex++;
-      }, 15);
+      }, 30);
     }
   </script>
 </body>

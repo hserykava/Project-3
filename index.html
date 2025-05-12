@@ -12,8 +12,9 @@
   <h2>Visualize real-time balance sway across experimental conditions</h2>
 
   <div class="controls">
-    <label for="pairSelect">Select Category Pair:</label>
-    <select id="pairSelect"></select>
+    <div class="arrow" id="leftArrow">◀</div>
+    <div class="pair-label" id="pairLabel">ECR vs ECN</div>
+    <div class="arrow" id="rightArrow">▶</div>
     <button id="playBtn">▶️ Play</button>
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
@@ -33,7 +34,6 @@
 
     let data = [], animationTimer, currentIndex = 0, swayData1 = [], swayData2 = [], isPlaying = false;
 
-    
     const body1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const head1 = svg.append("circle").attr("r", 30).attr("fill", "black");
     const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
@@ -41,7 +41,6 @@
     const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-    
     const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const head2 = svg.append("circle").attr("r", 30).attr("fill", "black");
     const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
@@ -49,7 +48,6 @@
     const leftLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const rightLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-    
     const hoverZone1 = svg.append("rect")
       .attr("width", 120)
       .attr("height", 250)
@@ -71,25 +69,13 @@
       {label: "WL1 vs WL2", categories: ["WL1", "WL2"]}
     ];
 
+    let currentPairIndex = 0;
+
     d3.json("data/sway_data.json").then(json => {
       data = json;
-
-      d3.select("#pairSelect")
-        .selectAll("option")
-        .data(pairs)
-        .enter()
-        .append("option")
-        .text(d => d.label);
-
-      d3.select("#pairSelect").on("change", () => {
-        updateSwayData();
-        if (isPlaying) {
-          currentIndex = 0;
-          animateHumans();
-        } else {
-          drawCurrentFigures();
-        }
-      });
+      updateSwayData();
+      updatePairLabel();
+      drawCurrentFigures();
 
       d3.select("#playBtn").on("click", () => {
         isPlaying = true;
@@ -102,12 +88,37 @@
         isPlaying = false;
       });
 
-      updateSwayData();
-      drawCurrentFigures();
+      d3.select("#leftArrow").on("click", () => {
+        currentPairIndex = (currentPairIndex - 1 + pairs.length) % pairs.length;
+        updateSwayData();
+        updatePairLabel();
+        if (isPlaying) {
+          currentIndex = 0;
+          animateHumans();
+        } else {
+          drawCurrentFigures();
+        }
+      });
+
+      d3.select("#rightArrow").on("click", () => {
+        currentPairIndex = (currentPairIndex + 1) % pairs.length;
+        updateSwayData();
+        updatePairLabel();
+        if (isPlaying) {
+          currentIndex = 0;
+          animateHumans();
+        } else {
+          drawCurrentFigures();
+        }
+      });
     });
 
+    function updatePairLabel() {
+      document.getElementById('pairLabel').textContent = pairs[currentPairIndex].label;
+    }
+
     function updateSwayData() {
-      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      const selectedPair = pairs[currentPairIndex].categories;
       swayData1 = data.filter(d => d.Description === selectedPair[0]);
       swayData2 = data.filter(d => d.Description === selectedPair[1]);
       clearInterval(animationTimer);
@@ -137,7 +148,6 @@
       rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 80)
               .attr("x2", centerX).attr("y2", baseY);
 
-    
       hoverZone.attr("x", torsoTopX - 60)
                .attr("y", torsoTopY - 60);
     }
@@ -183,7 +193,6 @@
       }, 70);
     }
 
-
     const tooltip = d3.select("#tooltip");
 
     function calculateAverageSway(data) {
@@ -196,24 +205,22 @@
     }
 
     hoverZone1.on("mouseover", () => {
-      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      const selectedPair = pairs[currentPairIndex].categories;
       tooltip.transition().duration(200).style("opacity", 1);
       tooltip.html(`<strong>Condition:</strong> ${selectedPair[0]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData1)} mm`)
              .style("left", (centerX1 - 70) + "px")
              .style("top", (baseY - 50) + "px");
-    })
-    .on("mouseout", () => {
+    }).on("mouseout", () => {
       tooltip.transition().duration(200).style("opacity", 0);
     });
 
     hoverZone2.on("mouseover", () => {
-      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      const selectedPair = pairs[currentPairIndex].categories;
       tooltip.transition().duration(200).style("opacity", 1);
       tooltip.html(`<strong>Condition:</strong> ${selectedPair[1]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData2)} mm`)
              .style("left", (centerX2 - 70) + "px")
              .style("top", (baseY - 50) + "px");
-    })
-    .on("mouseout", () => {
+    }).on("mouseout", () => {
       tooltip.transition().duration(200).style("opacity", 0);
     });
 

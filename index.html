@@ -37,15 +37,15 @@
     const head1 = svg.append("circle").attr("r", 20).attr("fill", "black");
     const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const rightArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg1 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
-    const rightLeg1 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
-  
+    const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+
     const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const head2 = svg.append("circle").attr("r", 20).attr("fill", "black");
     const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const rightArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg2 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
-    const rightLeg2 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+    const leftLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
     const pairs = [
       {label: "ECR vs ECN", categories: ["ECR", "ECN"]},
@@ -148,7 +148,7 @@
         moveHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
 
         currentIndex++;
-      }, 30);
+      }, 50);
     }
 
     function moveHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {

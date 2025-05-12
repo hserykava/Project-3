@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Human Balance Animation</title>
+  <title>Human Balance Animation - Paired Comparison</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -12,56 +12,72 @@
   </style>
 </head>
 <body>
-  <h1>How much does a person sway under different conditions?</h1>
+  <h1>Compare Sway Between Two Conditions</h1>
   <div class="controls">
-    <label for="categorySelect">Select Category:</label>
-    <select id="categorySelect"></select>
+    <label for="pairSelect">Select Category Pair:</label>
+    <select id="pairSelect"></select>
     <button id="playBtn">▶️ Play</button>
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
-  <svg width="800" height="600"></svg>
+  <svg width="1000" height="600"></svg>
 
   <script>
     const svg = d3.select("svg");
     const width = +svg.attr("width");
     const height = +svg.attr("height");
-    const centerX = width / 2;
+    const centerX1 = width / 4;
+    const centerX2 = (3 * width) / 4;
     const baseY = height / 2 + 150;
     const swayScaleX = 1000;
     const swayScaleY = 1000;
 
-    let data = [], animationTimer, currentIndex = 0, swayData = [], isPlaying = false;
+    let data = [], animationTimer, currentIndex = 0, swayData1 = [], swayData2 = [], isPlaying = false;
 
-    const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head = svg.append("circle").attr("r", 20).attr("fill", "black");
-    const leftArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const rightArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
-    const rightLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+    const body1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head1 = svg.append("circle").attr("r", 20).attr("fill", "black");
+    const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg1 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+    const rightLeg1 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+  
+    const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head2 = svg.append("circle").attr("r", 20).attr("fill", "black");
+    const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg2 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+    const rightLeg2 = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
+
+    const pairs = [
+      {label: "ECR vs ECN", categories: ["ECR", "ECN"]},
+      {label: "ECL1 vs ECL2", categories: ["ECL1", "ECL2"]},
+      {label: "WOR vs WON", categories: ["WOR", "WON"]},
+      {label: "WOL1 vs WOL2", categories: ["WOL1", "WOL2"]},
+      {label: "WR vs WN", categories: ["WR", "WN"]},
+      {label: "WL1 vs WL2", categories: ["WL1", "WL2"]}
+    ];
 
     d3.json("data/sway_data.json").then(json => {
       data = json;
-      const categories = Array.from(new Set(data.map(d => d.Description)));
 
-      d3.select("#categorySelect")
+      d3.select("#pairSelect")
         .selectAll("option")
-        .data(categories)
+        .data(pairs)
         .enter()
         .append("option")
-        .text(d => d);
+        .text(d => d.label);
 
-      d3.select("#categorySelect").on("change", () => {
+      d3.select("#pairSelect").on("change", () => {
         updateSwayData();
         if (isPlaying) {
           currentIndex = 0;
-          animateHuman();
+          animateHumans();
         }
       });
 
       d3.select("#playBtn").on("click", () => {
         isPlaying = true;
         currentIndex = 0;
-        animateHuman();
+        animateHumans();
       });
 
       d3.select("#pauseBtn").on("click", () => {
@@ -70,17 +86,23 @@
       });
 
       updateSwayData();
-      drawInitialFigure();
+      drawInitialFigures();
     });
 
     function updateSwayData() {
-      const category = d3.select("#categorySelect").property("value");
-      swayData = data.filter(d => d.Description === category);
+      const selectedPair = pairs[d3.select("#pairSelect").property("selectedIndex")].categories;
+      swayData1 = data.filter(d => d.Description === selectedPair[0]);
+      swayData2 = data.filter(d => d.Description === selectedPair[1]);
       clearInterval(animationTimer);
       currentIndex = 0;
     }
 
-    function drawInitialFigure() {
+    function drawInitialFigures() {
+      drawHuman(centerX1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+      drawHuman(centerX2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
+    }
+
+    function drawHuman(centerX, body, head, leftArm, rightArm, leftLeg, rightLeg) {
       const torsoTopX = centerX;
       const torsoTopY = baseY - 200;
       const torsoBottomX = centerX;
@@ -104,43 +126,53 @@
               .attr("x2", centerX).attr("y2", baseY);
     }
 
-    function animateHuman() {
+    function animateHumans() {
       clearInterval(animationTimer);
       animationTimer = setInterval(() => {
-        if (currentIndex >= swayData.length) {
+        if (currentIndex >= swayData1.length || currentIndex >= swayData2.length) {
           clearInterval(animationTimer);
           isPlaying = false;
           return;
         }
 
-        const d = swayData[currentIndex];
-        const offsetX = d.CoPx * swayScaleX;
-        const offsetY = -d.CoPy * swayScaleY;
+        const d1 = swayData1[currentIndex];
+        const d2 = swayData2[currentIndex];
 
-        const torsoTopX = centerX + offsetX;
-        const torsoTopY = baseY - 200 + offsetY;
-        const torsoBottomX = centerX;
-        const torsoBottomY = baseY;
+        const offsetX1 = d1.CoPx * swayScaleX;
+        const offsetY1 = -d1.CoPy * swayScaleY;
 
-        body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
-            .attr("x2", torsoTopX).attr("y2", torsoTopY);
+        const offsetX2 = d2.CoPx * swayScaleX;
+        const offsetY2 = -d2.CoPy * swayScaleY;
 
-        head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
-
-        leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-               .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
-
-        rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-                .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
-
-        leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
-               .attr("x2", centerX).attr("y2", baseY);
-
-        rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
-                .attr("x2", centerX).attr("y2", baseY);
+        moveHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        moveHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
 
         currentIndex++;
       }, 30);
+    }
+
+    function moveHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {
+      const torsoTopX = centerX + offsetX;
+      const torsoTopY = baseY - 200 + offsetY;
+      const torsoBottomX = centerX;
+      const torsoBottomY = baseY;
+
+      body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
+          .attr("x2", torsoTopX).attr("y2", torsoTopY);
+
+      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
+
+      leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+             .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
+
+      rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
+              .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
+
+      leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
+             .attr("x2", centerX).attr("y2", baseY);
+
+      rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
+              .attr("x2", centerX).attr("y2", baseY);
     }
   </script>
 </body>

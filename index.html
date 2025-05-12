@@ -12,12 +12,10 @@
   </style>
 </head>
 <body>
-  <h1>How much more does person sway under the influence of music?</h1>
+  <h1>How much does a person sway under different conditions?</h1>
   <div class="controls">
-    <label for="sampleSelect">Select Sample:</label>
-    <select id="sampleSelect"></select>
-    <label><input type="radio" name="condition" value="WON" checked> Music on</label>
-    <label><input type="radio" name="condition" value="WR"> Music off</label>
+    <label for="categorySelect">Select Condition:</label>
+    <select id="categorySelect"></select>
     <button id="playBtn">▶️</button>
     <button id="pauseBtn">⏸️</button>
   </div>
@@ -29,12 +27,11 @@
     const height = +svg.attr("height");
     const centerX = width / 2;
     const baseY = height / 2 + 150;
-    const swayScaleX = 1000;  
-    const swayScaleY = 1000;  
-    
+    const swayScale = 4000; // exaggerate sideways movement for visibility
+
     let data = [], animationTimer, currentIndex = 0, swayData = [], isPlaying = false;
 
-  
+    // Body parts
     const body = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const head = svg.append("circle").attr("r", 20).attr("fill", "black");
     const leftArm = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
@@ -42,23 +39,18 @@
     const leftLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
     const rightLeg = svg.append("line").attr("stroke", "gray").attr("stroke-width", 10);
 
-    d3.json("data/sway_data.json").then(json => {
+    d3.csv("data/swapped.csv").then(json => {
       data = json;
-      const samples = Array.from(new Set(data.map(d => d.Sample)));
+      const categories = Array.from(new Set(data.map(d => d.Description)));
 
-      d3.select("#sampleSelect")
+      d3.select("#categorySelect")
         .selectAll("option")
-        .data(samples)
+        .data(categories)
         .enter()
         .append("option")
         .text(d => d);
 
-      d3.selectAll("input[name='condition']").on("change", () => {
-        updateSwayData();
-        if (isPlaying) animateHuman();
-      });
-
-      d3.select("#sampleSelect").on("change", () => {
+      d3.select("#categorySelect").on("change", () => {
         updateSwayData();
         if (isPlaying) animateHuman();
       });
@@ -79,9 +71,8 @@
     });
 
     function updateSwayData() {
-      const sample = d3.select("#sampleSelect").property("value");
-      const condition = document.querySelector('input[name="condition"]:checked').value;
-      swayData = data.filter(d => d.Sample === sample && d.Description === condition);
+      const category = d3.select("#categorySelect").property("value");
+      swayData = data.filter(d => d.Description === category);
       currentIndex = 0;
     }
 
@@ -119,11 +110,10 @@
         }
 
         const d = swayData[currentIndex];
-        const offsetX = d.CoPx * swayScaleX;
-        const offsetY = -d.CoPy * swayScaleY;
-
+        const displacement = +d["Overall CoP Displacement"];
+        const offsetX = displacement * swayScale; // sway left/right
         const torsoTopX = centerX + offsetX;
-        const torsoTopY = baseY - 200 + offsetY;
+        const torsoTopY = baseY - 200;
         const torsoBottomX = centerX;
         const torsoBottomY = baseY;
 
@@ -145,7 +135,7 @@
                 .attr("x2", centerX).attr("y2", baseY);
 
         currentIndex++;
-      }, 15);
+      }, 30);
     }
   </script>
 </body>

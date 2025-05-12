@@ -34,15 +34,14 @@
     let data = [], animationTimer, currentIndex = 0, swayData1 = [], swayData2 = [], isPlaying = false;
 
     const body1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head1 = svg.append("circle").attr("r", 20).attr("fill", "black");
+    const head1 = svg.append("circle").attr("r", 30).attr("fill", "black");
     const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const rightArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-  
     const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head2 = svg.append("circle").attr("r", 20).attr("fill", "black");
+    const head2 = svg.append("circle").attr("r", 30).attr("fill", "black");
     const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const rightArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
     const leftLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
@@ -102,25 +101,25 @@
 
     function drawHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {
       const torsoTopX = centerX + offsetX;
-      const torsoTopY = baseY - 200 + offsetY;
+      const torsoTopY = baseY - 120 + offsetY;
       const torsoBottomX = centerX;
       const torsoBottomY = baseY;
 
       body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
           .attr("x2", torsoTopX).attr("y2", torsoTopY);
 
-      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
+      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 35);
 
       leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-             .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
+             .attr("x2", torsoTopX - 60).attr("y2", torsoTopY + 40);
 
       rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-              .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
+              .attr("x2", torsoTopX + 60).attr("y2", torsoTopY + 40);
 
-      leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
+      leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 80)
              .attr("x2", centerX).attr("y2", baseY);
 
-      rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
+      rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 80)
               .attr("x2", centerX).attr("y2", baseY);
     }
 
@@ -162,7 +161,7 @@
         drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
 
         currentIndex++;
-      }, 80);
+      }, 50);
     }
   </script>
 </body>

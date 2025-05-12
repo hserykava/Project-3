@@ -40,6 +40,7 @@
     const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
+  
     const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
     const head2 = svg.append("circle").attr("r", 20).attr("fill", "black");
     const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
@@ -71,6 +72,8 @@
         if (isPlaying) {
           currentIndex = 0;
           animateHumans();
+        } else {
+          drawCurrentFigures();
         }
       });
 
@@ -86,7 +89,7 @@
       });
 
       updateSwayData();
-      drawHumansAtCurrentIndex();
+      drawCurrentFigures();
     });
 
     function updateSwayData() {
@@ -95,39 +98,9 @@
       swayData2 = data.filter(d => d.Description === selectedPair[1]);
       clearInterval(animationTimer);
       currentIndex = 0;
-      drawHumansAtCurrentIndex();
     }
 
-    function drawHumansAtCurrentIndex() {
-      if (swayData1.length > 0 && swayData2.length > 0) {
-        const d1 = swayData1[0];
-        const d2 = swayData2[0];
-
-        moveHuman(centerX1, d1.CoPx * swayScaleX, -d1.CoPy * swayScaleY, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
-        moveHuman(centerX2, d2.CoPx * swayScaleX, -d2.CoPy * swayScaleY, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
-      }
-    }
-
-    function animateHumans() {
-      clearInterval(animationTimer);
-      animationTimer = setInterval(() => {
-        if (currentIndex >= swayData1.length || currentIndex >= swayData2.length) {
-          clearInterval(animationTimer);
-          isPlaying = false;
-          return;
-        }
-
-        const d1 = swayData1[currentIndex];
-        const d2 = swayData2[currentIndex];
-
-        moveHuman(centerX1, d1.CoPx * swayScaleX, -d1.CoPy * swayScaleY, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
-        moveHuman(centerX2, d2.CoPx * swayScaleX, -d2.CoPy * swayScaleY, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
-
-        currentIndex++;
-      }, 100);
-    }
-
-    function moveHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {
+    function drawHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {
       const torsoTopX = centerX + offsetX;
       const torsoTopY = baseY - 200 + offsetY;
       const torsoBottomX = centerX;
@@ -149,6 +122,47 @@
 
       rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
               .attr("x2", centerX).attr("y2", baseY);
+    }
+
+    function drawCurrentFigures() {
+      if (swayData1.length > 0 && swayData2.length > 0) {
+        const d1 = swayData1[0];
+        const d2 = swayData2[0];
+
+        const offsetX1 = d1.CoPx * swayScaleX;
+        const offsetY1 = -d1.CoPy * swayScaleY;
+
+        const offsetX2 = d2.CoPx * swayScaleX;
+        const offsetY2 = -d2.CoPy * swayScaleY;
+
+        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
+      }
+    }
+
+    function animateHumans() {
+      clearInterval(animationTimer);
+      animationTimer = setInterval(() => {
+        if (currentIndex >= swayData1.length || currentIndex >= swayData2.length) {
+          clearInterval(animationTimer);
+          isPlaying = false;
+          return;
+        }
+
+        const d1 = swayData1[currentIndex];
+        const d2 = swayData2[currentIndex];
+
+        const offsetX1 = d1.CoPx * swayScaleX;
+        const offsetY1 = -d1.CoPy * swayScaleY;
+
+        const offsetX2 = d2.CoPx * swayScaleX;
+        const offsetY2 = -d2.CoPy * swayScaleY;
+
+        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
+
+        currentIndex++;
+      }, 60);
     }
   </script>
 </body>

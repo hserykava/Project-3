@@ -86,7 +86,7 @@
       });
 
       updateSwayData();
-      drawInitialFigures();
+      drawHumansAtCurrentIndex();
     });
 
     function updateSwayData() {
@@ -95,35 +95,17 @@
       swayData2 = data.filter(d => d.Description === selectedPair[1]);
       clearInterval(animationTimer);
       currentIndex = 0;
+      drawHumansAtCurrentIndex();
     }
 
-    function drawInitialFigures() {
-      drawHuman(centerX1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
-      drawHuman(centerX2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
-    }
+    function drawHumansAtCurrentIndex() {
+      if (swayData1.length > 0 && swayData2.length > 0) {
+        const d1 = swayData1[0];
+        const d2 = swayData2[0];
 
-    function drawHuman(centerX, body, head, leftArm, rightArm, leftLeg, rightLeg) {
-      const torsoTopX = centerX;
-      const torsoTopY = baseY - 200;
-      const torsoBottomX = centerX;
-      const torsoBottomY = baseY;
-
-      body.attr("x1", torsoBottomX).attr("y1", torsoBottomY)
-          .attr("x2", torsoTopX).attr("y2", torsoTopY);
-
-      head.attr("cx", torsoTopX).attr("cy", torsoTopY - 25);
-
-      leftArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-             .attr("x2", torsoTopX - 40).attr("y2", torsoTopY + 40);
-
-      rightArm.attr("x1", torsoTopX).attr("y1", torsoTopY)
-              .attr("x2", torsoTopX + 40).attr("y2", torsoTopY + 40);
-
-      leftLeg.attr("x1", centerX - 20).attr("y1", baseY + 60)
-             .attr("x2", centerX).attr("y2", baseY);
-
-      rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 60)
-              .attr("x2", centerX).attr("y2", baseY);
+        moveHuman(centerX1, d1.CoPx * swayScaleX, -d1.CoPy * swayScaleY, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        moveHuman(centerX2, d2.CoPx * swayScaleX, -d2.CoPy * swayScaleY, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
+      }
     }
 
     function animateHumans() {
@@ -138,14 +120,8 @@
         const d1 = swayData1[currentIndex];
         const d2 = swayData2[currentIndex];
 
-        const offsetX1 = d1.CoPx * swayScaleX;
-        const offsetY1 = -d1.CoPy * swayScaleY;
-
-        const offsetX2 = d2.CoPx * swayScaleX;
-        const offsetY2 = -d2.CoPy * swayScaleY;
-
-        moveHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
-        moveHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
+        moveHuman(centerX1, d1.CoPx * swayScaleX, -d1.CoPy * swayScaleY, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        moveHuman(centerX2, d2.CoPx * swayScaleX, -d2.CoPy * swayScaleY, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
 
         currentIndex++;
       }, 100);

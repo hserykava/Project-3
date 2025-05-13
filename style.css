@@ -88,7 +88,7 @@ button:hover {
   background-color: #dddddd;
 }
 
-svg {
+#svg1 {
   background-color: #ffffff;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -96,7 +96,7 @@ svg {
   padding: 20px;
 }
 
-svg, .controls, h1, h2 {
+#svg, .controls, h1, h2 {
   animation: fadeIn 0.8s ease-in;
 }
 
@@ -122,4 +122,19 @@ svg, .controls, h1, h2 {
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
   color: #222;
   transform: translateY(-50px);
+}
+
+#svg2 {
+  background-color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin-top: 20px;
+  padding: 20px;
+}
+
+#legend {
+  background-color: #ffffff;
+  padding: 10px;
+  font-size: 14px;
+  width: 400px;
 }

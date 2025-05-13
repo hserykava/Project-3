@@ -19,42 +19,42 @@
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
 
-  <svg width="1000" height="600"></svg>
+  <svg id= "svg1" width="1000" height="600"></svg>
   <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
 
   <script>
-    const svg = d3.select("svg");
-    const width = +svg.attr("width");
-    const height = +svg.attr("height");
-    const centerX1 = width / 4;
-    const centerX2 = (3 * width) / 4;
-    const baseY = height / 2 + 150;
+    const svg1 = d3.select("#svg1");
+    const width1 = +svg1.attr("width");
+    const height1 = +svg1.attr("height");
+    const centerX1 = width1 / 4;
+    const centerX2 = (3 * width1) / 4;
+    const baseY = height1 / 2 + 150;
     const swayScaleX = 8000;
     const swayScaleY = 2000;
 
     let data = [], animationTimer, currentIndex = 0, swayData1 = [], swayData2 = [], isPlaying = false;
 
-    const body1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head1 = svg.append("circle").attr("r", 30).attr("fill", "black");
-    const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const rightArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const body1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head1 = svg1.append("circle").attr("r", 30).attr("fill", "black");
+    const leftArm1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-    const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head2 = svg.append("circle").attr("r", 30).attr("fill", "black");
-    const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const rightArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const rightLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const body2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head2 = svg1.append("circle").attr("r", 30).attr("fill", "black");
+    const leftArm2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-    const hoverZone1 = svg.append("rect")
+    const hoverZone1 = svg1.append("rect")
       .attr("width", 200)
       .attr("height", 250)
       .attr("fill", "transparent")
       .style("cursor", "pointer");
 
-    const hoverZone2 = svg.append("rect")
+    const hoverZone2 = svg1.append("rect")
       .attr("width", 200)
       .attr("height", 250)
       .attr("fill", "transparent")
@@ -227,5 +227,205 @@
     });
 
   </script>
+<div class="controls">
+  <label for="pairSelect">Select Comparison:</label>
+  <select id="pairSelect"></select>
+  <button class="button" id="play">Play</button>
+  <button class="button" id="pause">Pause</button>
+  <button class="button" id="restart">Restart</button>
+  <button class="button" id="skip">Skip</button>
+</div>
+
+<div style="display: flex; align-items: flex-start;">
+  <svg id = "svg2" width="1000" height="600"></svg>
+  <div id="legend" style="margin-left: 20px;"></div>
+</div>
+
+<script>
+  const gpairs = {
+    "Eyes closed, VR on: unmodified Mozart's Jupiter vs no music": [
+      "Eyes closed, VR environment on, unmodified Mozart's Jupiter",
+      "Eyes closed, VR environment on, no music"
+    ], //ECR vs. ECN
+    "Eyes closed, VR off: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz": [
+      "Eyes closed, VR environment off, Mozart's Jupiter with loudness shifted at 0.1Hz",
+      "Eyes closed, VR environment off, Mozart's Jupiter with loudness shifted at 0.25Hz"
+    ], //ECL1 vs. ECL2
+    "VR on: unmodified Mozart's Jupiter vs no music": [
+      "VR environment on, unmodified Mozart's Jupiter",
+      "VR environment on, no music"
+    ], //WOR vs. WON
+    "VR on: 0.1Hz vs 0.25Hz": [
+      "VR environment on, Mozart's Jupiter with loudness shifted at 0.1Hz",
+      "VR environment on, Mozart's Jupiter with loudness shifted at 0.25Hz"
+    ], //WOl1 vs. WOL2
+    "VR translating at 0.1Hz: no music vs unmodified Mozart's Jupiter": [
+      "VR environment on and moving at 0.1 Hz, no music",
+      "VR environment on and moving at 0.1 Hz, unmodified Mozart's Jupiter"
+    ], //WN vs. WR
+    "VR translating at 0.1Hz: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz": [
+      "VR environment on and moving at 0.1 Hz, Mozart's Jupiter with loudness shifted at 0.1Hz",
+      "VR environment on and moving at 0.1 Hz, Mozart's Jupiter with loudness shifted at 0.25Hz"
+    ] //WL1 vs. WL2
+  };
+
+  const svg2 = d3.select("#svg2");
+  const width2 = +svg2.attr("width") - 60;
+  const height2 = +svg2.attr("height") - 60;
+  const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+
+  let xScale = d3.scaleLinear().domain([0, 59]).range([margin.left, width2]);
+  let yScale = d3.scaleLinear().range([height2, margin.top]);
+
+  let line = d3.line()
+    .x(d => xScale(+d.Time))
+    .y(d => yScale(+d["Overall CoP Displacement"]));
+
+  let allData = {};
+  let currentPair = [];
+  let animationFrame, step = 0, maxSteps = 60, paused = false;
+  let intervalId;
+
+  const color = ['red', 'blue'];
+
+  const start = performance.now();
+
+  // Load CSV and initialize
+  d3.csv("data/swapped.csv").then(data => {
+    // Group by Description
+    Object.keys(gpairs).forEach(pairKey => {
+      const [g1, g2] = gpairs[pairKey];
+      allData[pairKey] = [
+        data.filter(d => d.Description === g1),
+        data.filter(d => d.Description === g2)
+      ];
+    });
+
+    initDropdown();
+    updateGraph(Object.keys(gpairs)[0]);
+  });
+
+  function initDropdown() {
+    const dropdown = d3.select("#pairSelect");
+    dropdown.selectAll("option")
+      .data(Object.keys(gpairs))
+      .enter()
+      .append("option")
+      .text(d => d);
+
+    dropdown.on("change", function() {
+      step = 0;
+      cancelAnimationFrame(animationFrame);
+      updateGraph(this.value);
+    });
+  }
+
+  function updateGraph(pairKey) {
+    svg2.selectAll("*").remove();
+    currentPair = allData[pairKey];
+
+    const flatY = currentPair.flat().map(d => +d["Overall CoP Displacement"]);
+    yScale.domain([d3.min(flatY) - 0.0001, d3.max(flatY) + 0.0001]);
+
+    // Axes
+    const xAxis = d3.axisBottom(xScale);
+    const yAxis = d3.axisLeft(yScale);
+    svg2.append("g").attr("transform", `translate(0,${height2})`).call(xAxis);
+    svg2.append("g").attr("transform", `translate(${margin.left},0)`).call(yAxis);
+
+    // Empty lines
+    svg2.selectAll(".line")
+      .data(currentPair)
+      .enter()
+      .append("path")
+      .attr("class", "line")
+      .attr("stroke", (d, i) => color[i])
+      .attr("stroke-width", 2)
+      .attr("fill", "none");
+
+    // Create HTML legend outside of SVG
+    const legendContainer = d3.select("#legend");
+    legendContainer.html(""); // clear existing legend
+
+    const labels = gpairs[pairKey];
+
+    labels.forEach((label, i) => {
+    const item = legendContainer.append("div")
+        .style("display", "flex")
+        .style("align-items", "center")
+        .style("margin-bottom", "8px");
+
+    item.append("div")
+        .style("width", "12px")
+        .style("height", "12px")
+        .style("background-color", color[i])
+        .style("margin-right", "8px");
+
+    item.append("div")
+        .text(label)
+        .style("font-size", "14px");
+    });
+  }
+
+   function drawStep(step) {
+    svg2.selectAll(".line")
+      .data(currentPair)
+      .attr("d", d => line(d.slice(0, step)));
+  }
+
+  function startAnimation() {
+    clearInterval(intervalId);
+    drawStep(step); // Show first step immediately
+    step++;
+
+    intervalId = setInterval(() => {
+    if (step > maxSteps || paused) {
+        clearInterval(intervalId);
+        return;
+    }
+
+    drawStep(step);
+    step++;
+
+    }, 1000);
+  }
+
+  document.getElementById("play").onclick = () => {
+  if (step >= maxSteps) {
+    step = 0;
+    drawStep(step + 1); // optional: show first frame again immediately
+    step++;
+  }
+  paused = false;
+  startAnimation();
+};
+
+  document.getElementById("pause").onclick = () => {
+    paused = true;
+    clearInterval(intervalId);
+  };
+
+  document.getElementById("restart").onclick = () => {
+    step = 0;
+    paused = false;
+    clearInterval(intervalId);
+    drawStep(0);
+    startAnimation();
+  };
+
+  document.getElementById("skip").onclick = () => {
+  clearInterval(intervalId);
+  drawStep(maxSteps);
+  step = maxSteps; // 👈 Reset the step to max
+};
+
+  d3.select("#pairSelect").on("change", function() {
+    step = 0;
+    clearInterval(intervalId);
+    updateGraph(this.value);
+  });
+</script>
+
+
 </body>
 </html>

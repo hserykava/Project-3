@@ -71,8 +71,12 @@
 
     let currentPairIndex = 0;
 
-    d3.json("data/sway_data.json").then(json => {
-      data = json;
+    d3.csv("data/fin_swapped.csv").then(csv => {
+      csv.forEach(d => {
+        d.CoPx = +d.CoPx;
+        d.CoPy = +d.CoPy;
+      });
+      data = csv;
       updateSwayData();
       updatePairLabel();
       drawCurrentFigures();

@@ -8,117 +8,113 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-  <h1>Compare Body Sway Between Two Conditions</h1>
-  <h2>bla bla bla</h2>
+  <h1>Compare Sway Between Two Conditions</h1>
+  <h2>Visualize real-time balance sway across experimental conditions</h2>
 
   <div class="controls">
     <div class="arrow" id="leftArrow">◀</div>
-    <div class="pair-label" id="pairLabel">ECR vs ECN</div>
+    <div class="pair-label" id="pairLabel">ECL1 vs ECL2</div>
     <div class="arrow" id="rightArrow">▶</div>
     <button id="playBtn">▶️ Play</button>
     <button id="pauseBtn">⏸️ Pause</button>
   </div>
 
-  <svg id= "svg1" width="1000" height="600"></svg>
+  <svg id="humanAnimation" width="1000" height="600"></svg>
+
   <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
 
+  <div class="controls">
+    <button class="button" id="play">Play</button>
+    <button class="button" id="pause">Pause</button>
+    <button class="button" id="restart">Restart</button>
+    <button class="button" id="skip">Skip</button>
+  </div>
+
+  <div id="chart"></div>
+
   <script>
-    const svg1 = d3.select("#svg1");
-    const width1 = +svg1.attr("width");
-    const height1 = +svg1.attr("height");
-    const centerX1 = width1 / 4;
-    const centerX2 = (3 * width1) / 4;
-    const baseY = height1 / 2 + 150;
-    const swayScaleX = 8000;
-    const swayScaleY = 2000;
+    const svg = d3.select("#humanAnimation");
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+    const centerX1 = width / 4;
+    const centerX2 = (3 * width) / 4;
+    const baseY = height / 2 + 150;
+    const swayScaleX = 1000;
+    const swayScaleY = 1000;
 
     let data = [], animationTimer, currentIndex = 0, swayData1 = [], swayData2 = [], isPlaying = false;
-
-    const body1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head1 = svg1.append("circle").attr("r", 30).attr("fill", "black");
-    const leftArm1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const rightArm1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const rightLeg1 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-
-    const body2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const head2 = svg1.append("circle").attr("r", 30).attr("fill", "black");
-    const leftArm2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const rightArm2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 6);
-    const leftLeg2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-    const rightLeg2 = svg1.append("line").attr("stroke", "black").attr("stroke-width", 10);
-
-    const hoverZone1 = svg1.append("rect")
-      .attr("width", 200)
-      .attr("height", 250)
-      .attr("fill", "transparent")
-      .style("cursor", "pointer");
-
-    const hoverZone2 = svg1.append("rect")
-      .attr("width", 200)
-      .attr("height", 250)
-      .attr("fill", "transparent")
-      .style("cursor", "pointer");
+    let currentPairIndex = 0;
 
     const pairs = [
-      {label: "ECR vs ECN", categories: ["ECR", "ECN"]},
       {label: "ECL1 vs ECL2", categories: ["ECL1", "ECL2"]},
+      {label: "ECR vs ECN", categories: ["ECR", "ECN"]},
       {label: "WOR vs WON", categories: ["WOR", "WON"]},
       {label: "WOL1 vs WOL2", categories: ["WOL1", "WOL2"]},
       {label: "WR vs WN", categories: ["WR", "WN"]},
       {label: "WL1 vs WL2", categories: ["WL1", "WL2"]}
     ];
 
-    let currentPairIndex = 0;
+    const body1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head1 = svg.append("circle").attr("r", 30).attr("fill", "black");
+    const leftArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg1 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
 
-    d3.csv("data/fin_swapped.csv").then(csv => {
-      csv.forEach(d => {
-        d.CoPx = +d.CoPx;
-        d.CoPy = +d.CoPy;
-      });
-      data = csv;
-      updateSwayData();
+    const body2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const head2 = svg.append("circle").attr("r", 30).attr("fill", "black");
+    const leftArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const rightArm2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 6);
+    const leftLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+    const rightLeg2 = svg.append("line").attr("stroke", "black").attr("stroke-width", 10);
+
+    d3.json("data/sway_data.json").then(json => {
+      data = json;
       updatePairLabel();
+      updateSwayData();
       drawCurrentFigures();
+    });
 
-      d3.select("#playBtn").on("click", () => {
-        isPlaying = true;
+    document.getElementById('leftArrow').addEventListener('click', () => {
+      currentPairIndex = (currentPairIndex - 1 + pairs.length) % pairs.length;
+      updatePairLabel();
+      updateSwayData();
+      if (isPlaying) {
         currentIndex = 0;
         animateHumans();
-      });
+      } else {
+        drawCurrentFigures();
+      }
+    });
 
-      d3.select("#pauseBtn").on("click", () => {
-        clearInterval(animationTimer);
-        isPlaying = false;
-      });
-
-      d3.select("#leftArrow").on("click", () => {
-        currentPairIndex = (currentPairIndex - 1 + pairs.length) % pairs.length;
-        updateSwayData();
-        updatePairLabel();
-        if (isPlaying) {
-          currentIndex = 0;
-          animateHumans();
-        } else {
-          drawCurrentFigures();
-        }
-      });
-
-      d3.select("#rightArrow").on("click", () => {
-        currentPairIndex = (currentPairIndex + 1) % pairs.length;
-        updateSwayData();
-        updatePairLabel();
-        if (isPlaying) {
-          currentIndex = 0;
-          animateHumans();
-        } else {
-          drawCurrentFigures();
-        }
-      });
+    document.getElementById('rightArrow').addEventListener('click', () => {
+      currentPairIndex = (currentPairIndex + 1) % pairs.length;
+      updatePairLabel();
+      updateSwayData();
+      if (isPlaying) {
+        currentIndex = 0;
+        animateHumans();
+      } else {
+        drawCurrentFigures();
+      }
     });
 
     function updatePairLabel() {
       document.getElementById('pairLabel').textContent = pairs[currentPairIndex].label;
+      const labelMapping = {
+        "ECR vs ECN": "Eyes closed, VR on: unmodified Mozart's Jupiter vs no music",
+        "ECL1 vs ECL2": "Eyes closed, VR off: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz",
+        "WOR vs WON": "VR on: unmodified Mozart's Jupiter vs no music",
+        "WOL1 vs WOL2": "VR on: 0.1Hz vs 0.25Hz",
+        "WR vs WN": "VR translating at 0.1Hz: no music vs unmodified Mozart's Jupiter",
+        "WL1 vs WL2": "VR translating at 0.1Hz: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz"
+      };
+      const graphPairKey = labelMapping[pairs[currentPairIndex].label];
+      if (graphPairKey) {
+        step = 0;
+        clearInterval(intervalId);
+        updateGraph(graphPairKey);
+      }
     }
 
     function updateSwayData() {
@@ -129,7 +125,7 @@
       currentIndex = 0;
     }
 
-    function drawHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg, hoverZone) {
+    function drawHuman(centerX, offsetX, offsetY, body, head, leftArm, rightArm, leftLeg, rightLeg) {
       const torsoTopX = centerX + offsetX;
       const torsoTopY = baseY - 120 + offsetY;
       const torsoBottomX = centerX;
@@ -151,9 +147,6 @@
 
       rightLeg.attr("x1", centerX + 20).attr("y1", baseY + 80)
               .attr("x2", centerX).attr("y2", baseY);
-
-      hoverZone.attr("x", torsoTopX - 60)
-               .attr("y", torsoTopY - 60);
     }
 
     function drawCurrentFigures() {
@@ -167,8 +160,8 @@
         const offsetX2 = d2.CoPx * swayScaleX;
         const offsetY2 = -d2.CoPy * swayScaleY;
 
-        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1, hoverZone1);
-        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2, hoverZone2);
+        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
       }
     }
 
@@ -176,9 +169,10 @@
       clearInterval(animationTimer);
       animationTimer = setInterval(() => {
         if (currentIndex >= swayData1.length || currentIndex >= swayData2.length) {
-          currentIndex = 0; // Restart animation from beginning
+          clearInterval(animationTimer);
+          isPlaying = false;
+          return;
         }
-
         const d1 = swayData1[currentIndex];
         const d2 = swayData2[currentIndex];
 
@@ -188,244 +182,12 @@
         const offsetX2 = d2.CoPx * swayScaleX;
         const offsetY2 = -d2.CoPy * swayScaleY;
 
-        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1, hoverZone1);
-        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2, hoverZone2);
+        drawHuman(centerX1, offsetX1, offsetY1, body1, head1, leftArm1, rightArm1, leftLeg1, rightLeg1);
+        drawHuman(centerX2, offsetX2, offsetY2, body2, head2, leftArm2, rightArm2, leftLeg2, rightLeg2);
 
         currentIndex++;
-      }, 30);
+      }, 70);
     }
-
-    const tooltip = d3.select("#tooltip");
-
-    function calculateAverageSway(data) {
-      if (data.length === 0) return 0;
-      let sum = 0;
-      data.forEach(d => {
-        sum += Math.sqrt(d.CoPx * d.CoPx + d.CoPy * d.CoPy);
-      });
-      return (sum / data.length * 1000).toFixed(2);
-    }
-
-    hoverZone1.on("mouseover", () => {
-      const selectedPair = pairs[currentPairIndex].categories;
-      tooltip.transition().duration(200).style("opacity", 1);
-      tooltip.html(`<strong>Condition:</strong> ${selectedPair[0]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData1)} mm`)
-             .style("left", (centerX1 - 70) + "px")
-             .style("top", (baseY - 50) + "px");
-    }).on("mouseout", () => {
-      tooltip.transition().duration(200).style("opacity", 0);
-    });
-
-    hoverZone2.on("mouseover", () => {
-      const selectedPair = pairs[currentPairIndex].categories;
-      tooltip.transition().duration(200).style("opacity", 1);
-      tooltip.html(`<strong>Condition:</strong> ${selectedPair[1]}<br><strong>Average Sway:</strong> ${calculateAverageSway(swayData2)} mm`)
-             .style("left", (centerX2 - 70) + "px")
-             .style("top", (baseY - 50) + "px");
-    }).on("mouseout", () => {
-      tooltip.transition().duration(200).style("opacity", 0);
-    });
-
   </script>
-<div class="controls">
-  <label for="pairSelect">Select Comparison:</label>
-  <select id="pairSelect"></select>
-  <button class="button" id="play">Play</button>
-  <button class="button" id="pause">Pause</button>
-  <button class="button" id="restart">Restart</button>
-  <button class="button" id="skip">Skip</button>
-</div>
-
-<div style="display: flex; align-items: flex-start;">
-  <svg id = "svg2" width="1000" height="600"></svg>
-  <div id="legend" style="margin-left: 20px;"></div>
-</div>
-
-<script>
-  const gpairs = {
-    "Eyes closed, VR on: unmodified Mozart's Jupiter vs no music": [
-      "Eyes closed, VR environment on, unmodified Mozart's Jupiter",
-      "Eyes closed, VR environment on, no music"
-    ], //ECR vs. ECN
-    "Eyes closed, VR off: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz": [
-      "Eyes closed, VR environment off, Mozart's Jupiter with loudness shifted at 0.1Hz",
-      "Eyes closed, VR environment off, Mozart's Jupiter with loudness shifted at 0.25Hz"
-    ], //ECL1 vs. ECL2
-    "VR on: unmodified Mozart's Jupiter vs no music": [
-      "VR environment on, unmodified Mozart's Jupiter",
-      "VR environment on, no music"
-    ], //WOR vs. WON
-    "VR on: 0.1Hz vs 0.25Hz": [
-      "VR environment on, Mozart's Jupiter with loudness shifted at 0.1Hz",
-      "VR environment on, Mozart's Jupiter with loudness shifted at 0.25Hz"
-    ], //WOl1 vs. WOL2
-    "VR translating at 0.1Hz: no music vs unmodified Mozart's Jupiter": [
-      "VR environment on and moving at 0.1 Hz, no music",
-      "VR environment on and moving at 0.1 Hz, unmodified Mozart's Jupiter"
-    ], //WN vs. WR
-    "VR translating at 0.1Hz: Mozart's Jupiter with loudness shifted at 0.1Hz vs 0.25Hz": [
-      "VR environment on and moving at 0.1 Hz, Mozart's Jupiter with loudness shifted at 0.1Hz",
-      "VR environment on and moving at 0.1 Hz, Mozart's Jupiter with loudness shifted at 0.25Hz"
-    ] //WL1 vs. WL2
-  };
-
-  const svg2 = d3.select("#svg2");
-  const width2 = +svg2.attr("width") - 60;
-  const height2 = +svg2.attr("height") - 60;
-  const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-
-  let xScale = d3.scaleLinear().domain([0, 59]).range([margin.left, width2]);
-  let yScale = d3.scaleLinear().range([height2, margin.top]);
-
-  let line = d3.line()
-    .x(d => xScale(+d.Time))
-    .y(d => yScale(+d["Overall CoP Displacement"]));
-
-  let allData = {};
-  let currentPair = [];
-  let animationFrame, step = 0, maxSteps = 60, paused = false;
-  let intervalId;
-
-  const color = ['red', 'blue'];
-
-  const start = performance.now();
-
-  // Load CSV and initialize
-  d3.csv("data/swapped.csv").then(data => {
-    // Group by Description
-    Object.keys(gpairs).forEach(pairKey => {
-      const [g1, g2] = gpairs[pairKey];
-      allData[pairKey] = [
-        data.filter(d => d.Description === g1),
-        data.filter(d => d.Description === g2)
-      ];
-    });
-
-    initDropdown();
-    updateGraph(Object.keys(gpairs)[0]);
-  });
-
-  function initDropdown() {
-    const dropdown = d3.select("#pairSelect");
-    dropdown.selectAll("option")
-      .data(Object.keys(gpairs))
-      .enter()
-      .append("option")
-      .text(d => d);
-
-    dropdown.on("change", function() {
-      step = 0;
-      cancelAnimationFrame(animationFrame);
-      updateGraph(this.value);
-    });
-  }
-
-  function updateGraph(pairKey) {
-    svg2.selectAll("*").remove();
-    currentPair = allData[pairKey];
-
-    const flatY = currentPair.flat().map(d => +d["Overall CoP Displacement"]);
-    yScale.domain([d3.min(flatY) - 0.0001, d3.max(flatY) + 0.0001]);
-
-    // Axes
-    const xAxis = d3.axisBottom(xScale);
-    const yAxis = d3.axisLeft(yScale);
-    svg2.append("g").attr("transform", `translate(0,${height2})`).call(xAxis);
-    svg2.append("g").attr("transform", `translate(${margin.left},0)`).call(yAxis);
-
-    // Empty lines
-    svg2.selectAll(".line")
-      .data(currentPair)
-      .enter()
-      .append("path")
-      .attr("class", "line")
-      .attr("stroke", (d, i) => color[i])
-      .attr("stroke-width", 2)
-      .attr("fill", "none");
-
-    // Create HTML legend outside of SVG
-    const legendContainer = d3.select("#legend");
-    legendContainer.html(""); // clear existing legend
-
-    const labels = gpairs[pairKey];
-
-    labels.forEach((label, i) => {
-    const item = legendContainer.append("div")
-        .style("display", "flex")
-        .style("align-items", "center")
-        .style("margin-bottom", "8px");
-
-    item.append("div")
-        .style("width", "12px")
-        .style("height", "12px")
-        .style("background-color", color[i])
-        .style("margin-right", "8px");
-
-    item.append("div")
-        .text(label)
-        .style("font-size", "14px");
-    });
-  }
-
-   function drawStep(step) {
-    svg2.selectAll(".line")
-      .data(currentPair)
-      .attr("d", d => line(d.slice(0, step)));
-  }
-
-  function startAnimation() {
-    clearInterval(intervalId);
-    drawStep(step); // Show first step immediately
-    step++;
-
-    intervalId = setInterval(() => {
-    if (step > maxSteps || paused) {
-        clearInterval(intervalId);
-        return;
-    }
-
-    drawStep(step);
-    step++;
-
-    }, 1000);
-  }
-
-  document.getElementById("play").onclick = () => {
-  if (step >= maxSteps) {
-    step = 0;
-    drawStep(step + 1); // optional: show first frame again immediately
-    step++;
-  }
-  paused = false;
-  startAnimation();
-};
-
-  document.getElementById("pause").onclick = () => {
-    paused = true;
-    clearInterval(intervalId);
-  };
-
-  document.getElementById("restart").onclick = () => {
-    step = 0;
-    paused = false;
-    clearInterval(intervalId);
-    drawStep(0);
-    startAnimation();
-  };
-
-  document.getElementById("skip").onclick = () => {
-  clearInterval(intervalId);
-  drawStep(maxSteps);
-  step = maxSteps; // 👈 Reset the step to max
-};
-
-  d3.select("#pairSelect").on("change", function() {
-    step = 0;
-    clearInterval(intervalId);
-    updateGraph(this.value);
-  });
-</script>
-
-
 </body>
 </html>
